@@ -1,0 +1,3046 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#080808">
+<title>WARSCALE V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root {
+  --bg: #080808;
+  --bg1: #101010;
+  --bg2: #161616;
+  --bg3: #1e1e1e;
+  --border: rgba(201,168,76,0.18);
+  --border-hi: rgba(201,168,76,0.5);
+  --gold: #c9a84c;
+  --gold-hi: #e8c97e;
+  --gold-lo: rgba(201,168,76,0.08);
+  --text: #f0ead6;
+  --text2: #8a7d5a;
+  --text3: #3a3020;
+  --red: #e76f51;
+  --green: #6ab187;
+  --r: 10px;
+  --r-lg: 16px;
+  --tab-h: 68px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================================
+   RESET + BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bg); height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  height: 100%;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.028;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+#onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: var(--bg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#onboarding::-webkit-scrollbar { display: none; }
+
+.ob-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 60px 24px calc(80px + var(--safe-bottom));
+}
+
+.ob-hero {
+  text-align: center;
+  margin-bottom: 48px;
+  animation: ob-fade 0.8s ease both;
+}
+.ob-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px; height: 72px;
+  border: 1px solid var(--border-hi);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.ob-logo-mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--gold-lo), transparent);
+}
+.ob-logo-mark span { font-size: 32px; position: relative; z-index: 1; }
+.ob-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 6px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.ob-tagline {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.ob-step {
+  display: none;
+  animation: ob-slide 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.ob-step.active { display: block; }
+
+@keyframes ob-slide { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ob-fade { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+.ob-step-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.ob-step-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+.ob-step-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.ob-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+  margin: 28px 0;
+}
+
+.ob-field { margin-bottom: 14px; }
+.ob-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.ob-field input {
+  width: 100%;
+  padding: 15px 16px;
+  font-size: 16px;
+  font-family: 'Barlow', sans-serif;
+  border: 1px solid var(--bg3);
+  border-radius: var(--r);
+  background: var(--bg1);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.ob-field input:focus { border-color: var(--border-hi); }
+.ob-field input::placeholder { color: var(--text3); }
+
+.ob-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Tone selector */
+.tone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.tone-card {
+  background: var(--bg1);
+  border: 1px solid var(--bg3);
+  border-radius: var(--r-lg);
+  padding: 20px 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+.tone-card.selected {
+  background: rgba(201,168,76,0.07);
+  border-color: var(--border-hi);
+}
+.tone-card-icon { font-size: 28px; margin-bottom: 8px; }
+.tone-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.tone-card.selected .tone-card-name { color: var(--gold); }
+.tone-card-desc { font-size: 10px; color: var(--text2); line-height: 1.5; }
+
+/* Steps indicator */
+.ob-steps-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 32px;
+}
+.ob-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--bg3);
+  transition: all 0.3s;
+}
+.ob-dot.active { background: var(--gold); width: 20px; border-radius: 3px; }
+
+/* Button */
+.btn-primary {
+  width: 100%;
+  padding: 17px;
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gold-lo);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.btn-primary:active::before { opacity: 1; }
+.btn-primary:active { transform: scale(0.99); }
+
+/* ============================================================
+   MAIN APP
+   ============================================================ */
+#main-app {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+}
+
+/* ============================================================
+   STATUS BAR AREA
+   ============================================================ */
+.status-bar {
+  background: var(--bg);
+  padding: 48px 20px 0;
+  position: relative;
+  z-index: 10;
+}
+.status-bar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* ============================================================
+   TAB CONTENT AREA
+   ============================================================ */
+.tabs-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 24px);
+}
+.tab-panel::-webkit-scrollbar { display: none; }
+.tab-panel.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   BOTTOM TABS NAV
+   ============================================================ */
+.bottom-nav {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  background: rgba(8,8,8,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+  height: calc(var(--tab-h) + var(--safe-bottom));
+  flex-shrink: 0;
+}
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 10px 4px;
+  transition: all 0.2s;
+  position: relative;
+  border: none;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.nav-tab.active::before { opacity: 1; }
+.nav-tab-icon {
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+.nav-tab.active .nav-tab-icon { transform: translateY(-1px); }
+.nav-tab-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  transition: color 0.2s;
+}
+.nav-tab.active .nav-tab-label { color: var(--gold); }
+
+/* ============================================================
+   SHARED COMPONENTS
+   ============================================================ */
+.section { padding: 16px 20px; }
+.section + .section { padding-top: 0; }
+
+.lbl {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+}
+
+.card-body { padding: 16px; }
+
+.gold-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+  margin: 14px 0;
+}
+
+/* ============================================================
+   HOME TAB
+   ============================================================ */
+
+/* --- STREAK BAR --- */
+.streak-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top, 14px) + 14px) 20px 14px;
+  background: var(--bg);
+  position: relative;
+}
+.streak-fire {
+  font-size: 22px;
+  animation: pulse-fire 2s ease-in-out infinite;
+}
+@keyframes pulse-fire {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.streak-info { flex: 1; }
+.streak-days {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: 1px;
+}
+.streak-label {
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.streak-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  background: var(--gold-lo);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  text-transform: uppercase;
+}
+
+/* --- PROGRESS RING --- */
+.ring-section {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 20px;
+  position: relative;
+}
+.ring-wrap {
+  position: relative;
+  width: 175px;
+  height: 175px;
+}
+.ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--bg3); stroke-width: 6; }
+.ring-progress {
+  fill: none;
+  stroke: url(#goldGradient);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ring-pct {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+.ring-sub { font-size: 10px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+/* --- STATS ROW --- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 20px 16px;
+}
+.stat-block {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 6px;
+  text-align: center;
+  min-width: 0;
+}
+.stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-val.up { color: var(--red); }
+.stat-val.down { color: var(--green); }
+.stat-val.gold { color: var(--gold); }
+.stat-lbl { font-size: 9px; color: var(--text3); margin-top: 5px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.3; }
+
+/* --- WEIGHT INPUT --- */
+.input-section { padding: 0 20px 14px; }
+.input-card {
+  background: var(--bg1);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-lg);
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.input-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.input-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.input-row { display: flex; gap: 10px; align-items: center; }
+.weight-input {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 24px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border: 1px solid var(--bg3);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  text-align: center;
+}
+.weight-input:focus { border-color: var(--border-hi); }
+.weight-input::placeholder { color: var(--text3); font-size: 18px; }
+.btn-record {
+  padding: 14px 20px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r);
+  color: var(--gold);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.btn-record:active { transform: scale(0.97); }
+.btn-record.saved {
+  background: rgba(106,177,135,0.12);
+  border-color: rgba(106,177,135,0.5);
+  color: var(--green);
+}
+
+/* Already logged indicator */
+.already-logged {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(106,177,135,0.07);
+  border: 1px solid rgba(106,177,135,0.25);
+  border-radius: var(--r);
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--green);
+}
+.already-logged.show { display: flex; }
+
+/* --- COACH MESSAGE --- */
+.coach-msg {
+  padding: 0 20px 14px;
+}
+.coach-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border-left: 2px solid var(--gold);
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.coach-icon { font-size: 18px; flex-shrink: 0; }
+.coach-text { font-size: 13px; color: var(--text2); line-height: 1.65; }
+.coach-text strong { color: var(--gold-hi); font-weight: 600; }
+
+/* --- ETA CARD --- */
+.eta-card {
+  margin: 0 20px 14px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.eta-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+}
+.eta-left { flex: 1; min-width: 0; }
+.eta-label { font-size: 10px; color: var(--text3); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+.eta-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(16px, 4.5vw, 22px);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eta-days {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.eta-right { text-align: right; flex-shrink: 0; }
+.eta-pace-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+.eta-pace-lbl { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; }
+
+/* --- HISTORY --- */
+.hist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(201,168,76,0.07);
+}
+.hist-item:last-child { border-bottom: none; }
+.hist-date { min-width: 90px; font-size: 12px; color: var(--text2); }
+.hist-date.today { color: var(--text); font-weight: 600; }
+.hist-kg {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  flex: 1;
+}
+.hist-delta {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+.hist-delta.pos { color: var(--red); }
+.hist-delta.neg { color: var(--green); }
+
+/* ============================================================
+   STATS TAB
+   ============================================================ */
+.period-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 16px 18px 14px;
+}
+.period-tab {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--bg3);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.period-tab.active {
+  background: var(--gold-lo);
+  border-color: var(--border-hi);
+  color: var(--gold);
+}
+
+.chart-wrap {
+  position: relative;
+  height: 200px;
+  padding: 0 18px 12px;
+}
+.chart-wrap canvas { border-radius: var(--r); }
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 18px 12px;
+}
+.analysis-block {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.analysis-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.analysis-lbl { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+.analysis-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+.alert-card {
+  margin: 0 18px 12px;
+  padding: 13px 16px;
+  border-radius: var(--r);
+  border: 1px solid;
+  display: none;
+}
+.alert-card.show { display: flex; gap: 10px; align-items: flex-start; }
+.alert-card.warn { background: rgba(231,111,81,0.07); border-color: rgba(231,111,81,0.3); }
+.alert-card.info { background: rgba(201,168,76,0.05); border-color: var(--border); }
+.alert-title { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+.alert-card.warn .alert-title { color: var(--red); }
+.alert-card.info .alert-title { color: var(--gold); }
+.alert-msg { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+.weekend-analysis {
+  margin: 0 18px 12px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.weekend-title { font-size: 10px; color: var(--text3); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; }
+.weekend-msg { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.weekend-msg strong { color: var(--gold-hi); }
+
+/* ============================================================
+   RANG TAB
+   ============================================================ */
+.rank-hero {
+  text-align: center;
+  padding: 24px 18px 16px;
+  position: relative;
+}
+.rank-emblem {
+  font-size: 60px;
+  display: block;
+  margin-bottom: 10px;
+  animation: rank-pulse 3s ease-in-out infinite;
+}
+@keyframes rank-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(201,168,76,0.2)); }
+  50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(201,168,76,0.45)); }
+}
+.rank-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 5px;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.rank-level { font-size: 11px; color: var(--text3); letter-spacing: 0.2em; text-transform: uppercase; }
+
+.rank-progress { padding: 0 18px 16px; }
+.rank-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.rank-progress-label span:last-child { color: var(--gold); }
+.progress-bar {
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-hi));
+  border-radius: 2px;
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rank-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 18px 14px; }
+.rank-stat {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  text-align: center;
+}
+.rank-stat-icon { font-size: 20px; margin-bottom: 4px; }
+.rank-stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+.rank-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+
+/* Medals */
+.medals-section { padding: 0 18px; }
+.medal-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.medal-item.locked { opacity: 0.35; filter: grayscale(1); }
+.medal-item.unlocked { border-color: rgba(201,168,76,0.3); }
+.medal-icon { font-size: 28px; flex-shrink: 0; }
+.medal-info { flex: 1; }
+.medal-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.medal-item.unlocked .medal-name { color: var(--gold-hi); }
+.medal-desc { font-size: 11px; color: var(--text2); }
+.medal-status {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.medal-item.unlocked .medal-status { color: var(--green); }
+
+/* Ranks ladder */
+.ranks-ladder { padding: 0 18px 16px; }
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(201,168,76,0.06);
+}
+.rank-row:last-child { border-bottom: none; }
+.rank-row-icon { font-size: 22px; min-width: 30px; text-align: center; }
+.rank-row-info { flex: 1; }
+.rank-row-name { font-size: 13px; font-weight: 600; color: var(--text2); }
+.rank-row.current .rank-row-name { color: var(--gold); }
+.rank-row-req { font-size: 11px; color: var(--text3); }
+.rank-row-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--gold-lo);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  display: none;
+}
+.rank-row.current .rank-row-badge { display: block; }
+.rank-row.passed { opacity: 0.4; }
+
+/* ============================================================
+   COACH TAB
+   ============================================================ */
+.coach-tab-header {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid rgba(201,168,76,0.08);
+  margin-bottom: 14px;
+}
+.coach-tab-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.coach-tab-sub { font-size: 12px; color: var(--text2); }
+
+.weekly-bilan {
+  margin: 0 18px 14px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.weekly-bilan::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.bilan-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.bilan-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: var(--gold-lo);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+.bilan-week { font-size: 12px; color: var(--text2); }
+.bilan-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.bilan-text strong { color: var(--gold-hi); font-weight: 600; }
+
+.tip-of-day {
+  margin: 0 18px 14px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+}
+.tip-icon { font-size: 18px; flex-shrink: 0; }
+.tip-label { font-size: 10px; color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+.tip-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+.settings-group { padding: 0 18px 14px; }
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.settings-item:active { border-color: var(--border-hi); }
+.settings-item-icon { font-size: 18px; }
+.settings-item-info { flex: 1; }
+.settings-item-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.settings-item-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.settings-item-arrow { font-size: 14px; color: var(--text3); }
+.settings-item.danger .settings-item-label { color: var(--red); }
+.settings-item.danger { border-color: rgba(231,111,81,0.2); }
+
+.version-line {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.15em;
+  padding: 20px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 3000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--bg1);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-hi);
+  padding: 36px 28px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.88) translateY(16px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.modal-box::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.modal-emoji { font-size: 52px; line-height: 1; margin-bottom: 16px; display: block; }
+.modal-eyebrow {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.modal-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+.modal-sep { width: 40px; height: 1px; background: var(--border-hi); margin: 0 auto 16px; }
+.modal-msg {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.modal-close {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--gold);
+  padding: 12px 28px;
+  border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.modal-close:active { background: var(--gold-lo); }
+
+/* Confirm modal */
+.modal-actions { display: flex; gap: 10px; }
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--bg3);
+  border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-danger {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(231,111,81,0.4);
+  border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* ============================================================
+   LEVEL UP ANIMATION
+   ============================================================ */
+#levelup-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 4000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 40px;
+}
+#levelup-overlay.show { display: flex; }
+.levelup-rays {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(201,168,76,0.08) 0%, transparent 70%);
+  animation: rays-pulse 2s ease-in-out infinite;
+}
+@keyframes rays-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.levelup-label {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  position: relative;
+}
+.levelup-emoji {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 20px;
+  animation: levelup-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  position: relative;
+}
+@keyframes levelup-bounce {
+  from { transform: scale(0.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.levelup-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 8px;
+  position: relative;
+}
+.levelup-sep { width: 60px; height: 1px; background: var(--border-hi); margin: 20px auto; position: relative; }
+.levelup-msg {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--text2);
+  line-height: 1.6;
+  max-width: 280px;
+  position: relative;
+}
+.levelup-close {
+  margin-top: 30px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--gold);
+  padding: 14px 32px;
+  border-radius: var(--r);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+}
+
+/* ============================================================
+   CONFETTI CANVAS
+   ============================================================ */
+#confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+}
+
+/* ============================================================
+   XP BAR
+   ============================================================ */
+.xp-bar-wrap {
+  margin: 2px 20px 10px;
+  padding: 10px 14px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.xp-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.xp-level-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+}
+.xp-val-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 0.08em;
+}
+.xp-bar-track {
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-hi));
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.xp-next-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   SHORT-TERM GOAL
+   ============================================================ */
+.stg-card {
+  margin: 0 20px 10px;
+  background: var(--bg1);
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.stg-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.stg-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.stg-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.stg-edit-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 0 4px;
+}
+.stg-desc {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.stg-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.stg-progress-bar {
+  flex: 1;
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.stg-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-hi));
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.stg-pct {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 34px;
+  text-align: right;
+}
+.stg-meta {
+  font-size: 11px;
+  color: var(--text2);
+}
+.stg-empty {
+  margin: 0 20px 10px;
+  padding: 11px 14px;
+  background: transparent;
+  border: 1px dashed rgba(201,168,76,0.25);
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text3);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.stg-empty:active { border-color: var(--border-hi); color: var(--text2); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.5s ease both; }
+.fade-up-d1 { animation-delay: 0.08s; }
+.fade-up-d2 { animation-delay: 0.16s; }
+.fade-up-d3 { animation-delay: 0.24s; }
+.fade-up-d4 { animation-delay: 0.32s; }
+.fade-up-d5 { animation-delay: 0.40s; }
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ONBOARDING
+     ============================================================ -->
+<div id="onboarding">
+  <div class="ob-wrap">
+    <div class="ob-hero">
+      <div class="ob-logo-mark"><span>⚔️</span></div>
+      <div class="ob-title">WARSCALE</div>
+      <div class="ob-tagline">Discipline · Progression · Victoire</div>
+    </div>
+
+    <div class="ob-steps-dots">
+      <div class="ob-dot active" id="dot-0"></div>
+      <div class="ob-dot" id="dot-1"></div>
+      <div class="ob-dot" id="dot-2"></div>
+    </div>
+
+    <!-- Step 0 — Weights -->
+    <div class="ob-step active" id="ob-step-0">
+      <div class="ob-step-label">Étape 1 / 3</div>
+      <div class="ob-step-title">Ton champ de bataille</div>
+      <div class="ob-step-sub">Définis ton point de départ et ta cible. Chaque gramme perdu sera tracé avec précision.</div>
+      <div class="ob-row">
+        <div class="ob-field">
+          <label>Poids actuel (kg)</label>
+          <input type="number" id="ob-start" placeholder="95.0" step="0.1" min="40" max="300" inputmode="decimal">
+        </div>
+        <div class="ob-field">
+          <label>Poids cible (kg)</label>
+          <input type="number" id="ob-goal" placeholder="80.0" step="0.1" min="40" max="300" inputmode="decimal">
+        </div>
+      </div>
+      <div class="ob-divider"></div>
+      <div class="ob-field">
+        <label>Date objectif (optionnel)</label>
+        <input type="date" id="ob-date">
+      </div>
+      <div class="ob-field">
+        <label>Occasion (optionnel)</label>
+        <input type="text" id="ob-occasion" placeholder="ex : Été 2026, Mariage…" maxlength="40">
+      </div>
+      <button class="btn-primary" onclick="obNextStep(0)" style="margin-top:8px">Continuer →</button>
+    </div>
+
+    <!-- Step 1 — Tone -->
+    <div class="ob-step" id="ob-step-1">
+      <div class="ob-step-label">Étape 2 / 3</div>
+      <div class="ob-step-title">Ton style de combat</div>
+      <div class="ob-step-sub">Comment veux-tu être motivé ? Tu pourras changer ça plus tard.</div>
+      <div class="tone-grid">
+        <div class="tone-card selected" id="tone-warrior" onclick="selectTone('warrior')">
+          <div class="tone-card-icon">⚔️</div>
+          <div class="tone-card-name">Warrior</div>
+          <div class="tone-card-desc">Défi, combativité, dépassement de soi</div>
+        </div>
+        <div class="tone-card" id="tone-coach" onclick="selectTone('coach')">
+          <div class="tone-card-icon">🌱</div>
+          <div class="tone-card-name">Coach</div>
+          <div class="tone-card-desc">Douceur, constance, bienveillance</div>
+        </div>
+      </div>
+      <div class="ob-divider"></div>
+      <button class="btn-primary" onclick="obNextStep(1)">Continuer →</button>
+    </div>
+
+    <!-- Step 2 — Confirm -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-step-label">Étape 3 / 3</div>
+      <div class="ob-step-title">Prêt au combat</div>
+      <div class="ob-step-sub">Voici ta mission. Elle commence maintenant.</div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">Départ</span>
+            <span id="confirm-start" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--gold)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">Objectif</span>
+            <span id="confirm-goal" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--gold)">—</span>
+          </div>
+          <div class="gold-line"></div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em">À perdre</span>
+            <span id="confirm-diff" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text)">—</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="obFinish()" style="margin-top:4px">⚔️ Commencer la mission</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="main-app">
+  <div id="app">
+
+    <!-- TABS CONTENT -->
+    <div class="tabs-content">
+
+      <!-- ===== HOME TAB ===== -->
+      <div class="tab-panel active" id="tab-home">
+
+        <!-- Streak bar -->
+        <div class="streak-bar fade-up">
+          <div class="streak-fire" id="streak-fire">🔥</div>
+          <div class="streak-info">
+            <div class="streak-days" id="streak-days">0</div>
+            <div class="streak-label">jours consécutifs</div>
+          </div>
+          <div class="streak-badge" id="streak-badge">RANG I</div>
+        </div>
+
+        <!-- XP Bar -->
+        <div class="xp-bar-wrap fade-up fade-up-d1" id="xp-bar-wrap">
+          <div class="xp-bar-header">
+            <span class="xp-level-label" id="xp-level-label">NV. 1</span>
+            <span class="xp-val-label" id="xp-val-label">0 XP</span>
+          </div>
+          <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="xp-next-label" id="xp-next-label">100 XP pour niveau 2</div>
+        </div>
+
+        <!-- Short-term goal -->
+        <div class="stg-card fade-up fade-up-d1" id="stg-card" style="display:none">
+          <div class="stg-header">
+            <span class="stg-label">🎯 Objectif court terme</span>
+            <button class="stg-edit-btn" onclick="openSTGModal()">✏️</button>
+          </div>
+          <div class="stg-body">
+            <div class="stg-desc" id="stg-desc">—</div>
+            <div class="stg-progress-wrap">
+              <div class="stg-progress-bar">
+                <div class="stg-progress-fill" id="stg-progress-fill" style="width:0%"></div>
+              </div>
+              <span class="stg-pct" id="stg-pct">0%</span>
+            </div>
+            <div class="stg-meta" id="stg-meta">—</div>
+          </div>
+        </div>
+        <div class="stg-empty fade-up fade-up-d1" id="stg-empty" onclick="openSTGModal()">
+          <span>🎯</span> <span>Définir un objectif court terme</span> <span style="color:var(--gold)">+</span>
+        </div>
+
+        <!-- Progress ring -->
+        <div class="ring-section fade-up fade-up-d1" style="margin-top:4px">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#c9a84c"/>
+                  <stop offset="100%" stop-color="#e8c97e"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="80" cy="80" r="71"/>
+              <circle class="ring-progress" id="ring-circle" cx="80" cy="80" r="71"
+                stroke-dasharray="446"
+                stroke-dashoffset="446"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-pct" id="ring-pct">0%</div>
+              <div class="ring-sub">objectif</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-row fade-up fade-up-d2">
+          <div class="stat-block">
+            <div class="stat-val gold" id="stat-current">—</div>
+            <div class="stat-lbl">Poids actuel</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-val" id="stat-delta">—</div>
+            <div class="stat-lbl">vs hier</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-val" id="stat-lost">—</div>
+            <div class="stat-lbl">kg perdus</div>
+          </div>
+        </div>
+
+        <!-- ETA card -->
+        <div class="eta-card fade-up fade-up-d3" id="eta-card">
+          <div class="eta-left">
+            <div class="eta-label">Arrivée estimée</div>
+            <div class="eta-date" id="eta-date">—</div>
+            <div class="eta-days" id="eta-days-left">—</div>
+          </div>
+          <div class="eta-right">
+            <div class="eta-pace-val" id="eta-pace">—</div>
+            <div class="eta-pace-lbl">kg / semaine</div>
+          </div>
+        </div>
+
+        <!-- Input card -->
+        <div class="input-section fade-up fade-up-d3">
+          <div class="input-card">
+            <div class="input-label" id="input-date-label">Poids du jour</div>
+            <div class="input-row">
+              <input type="number" class="weight-input" id="weight-input"
+                placeholder="0.0" step="0.1" min="30" max="300" inputmode="decimal">
+              <button class="btn-record" id="btn-record" onclick="recordWeight()">⚔️ LOG</button>
+            </div>
+            <div class="already-logged" id="already-logged">
+              <span>✓</span>
+              <span>Pesée enregistrée pour aujourd'hui : <strong id="today-logged-val" style="color:var(--gold)"></strong> kg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coach message -->
+        <div class="coach-msg fade-up fade-up-d4">
+          <div class="coach-card">
+            <div class="coach-icon" id="coach-icon">⚡</div>
+            <div class="coach-text" id="coach-text">Entre ton poids pour commencer ta première mission.</div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="section fade-up fade-up-d5">
+          <div class="lbl">Historique récent</div>
+          <div class="card">
+            <div class="card-body" id="hist-list">
+              <div style="text-align:center;padding:20px;font-size:12px;color:var(--text3)">Aucune donnée encore</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end tab-home -->
+
+      <!-- ===== STATS TAB ===== -->
+      <div class="tab-panel" id="tab-stats">
+
+        <div class="period-tabs">
+          <button class="period-tab active" onclick="setPeriod(7, this)">7 jours</button>
+          <button class="period-tab" onclick="setPeriod(30, this)">30 jours</button>
+          <button class="period-tab" onclick="setPeriod(0, this)">Tout</button>
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="weight-chart"></canvas>
+        </div>
+
+        <!-- Alert cards -->
+        <div class="alert-card warn" id="alert-plateau">
+          <span style="font-size:18px">⚠️</span>
+          <div>
+            <div class="alert-title">Plateau détecté</div>
+            <div class="alert-msg" id="alert-plateau-msg">Stagnation depuis plusieurs jours. Il est temps de varier ton approche.</div>
+          </div>
+        </div>
+
+        <div class="alert-card info" id="alert-good">
+          <span style="font-size:18px">🎯</span>
+          <div>
+            <div class="alert-title">Belle progression</div>
+            <div class="alert-msg" id="alert-good-msg"></div>
+          </div>
+        </div>
+
+        <!-- Analysis grid -->
+        <div class="analysis-grid">
+          <div class="analysis-block">
+            <div class="analysis-val gold" id="an-velocity">—</div>
+            <div class="analysis-lbl">kg / semaine</div>
+            <div class="analysis-sub" id="an-velocity-sub">Vélocité réelle</div>
+          </div>
+          <div class="analysis-block">
+            <div class="analysis-val" id="an-total">—</div>
+            <div class="analysis-lbl">kg perdus total</div>
+            <div class="analysis-sub" id="an-total-sub">Depuis le début</div>
+          </div>
+          <div class="analysis-block">
+            <div class="analysis-val" id="an-best-week">—</div>
+            <div class="analysis-lbl">meilleure semaine</div>
+            <div class="analysis-sub">Performance max</div>
+          </div>
+          <div class="analysis-block">
+            <div class="analysis-val" id="an-consistency">—</div>
+            <div class="analysis-lbl">% de pesées</div>
+            <div class="analysis-sub" id="an-consistency-sub">Constance</div>
+          </div>
+        </div>
+
+        <!-- Weekend analysis -->
+        <div class="weekend-analysis" id="weekend-analysis" style="display:none">
+          <div class="weekend-title">📅 Analyse weekend</div>
+          <div class="weekend-msg" id="weekend-msg"></div>
+        </div>
+
+      </div><!-- end tab-stats -->
+
+      <!-- ===== RANG TAB ===== -->
+      <div class="tab-panel" id="tab-rang">
+
+        <div class="rank-hero">
+          <span class="rank-emblem" id="rank-emblem">🪖</span>
+          <div class="rank-name" id="rank-name">RECRUE</div>
+          <div class="rank-level" id="rank-level">Rang I · 0% de l'objectif</div>
+        </div>
+
+        <div class="rank-progress">
+          <div class="rank-progress-label">
+            <span id="rank-current-label">Recrue</span>
+            <span id="rank-next-label">Soldat</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="rank-progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="rank-stats">
+          <div class="rank-stat">
+            <div class="rank-stat-icon">🔥</div>
+            <div class="rank-stat-val" id="rs-streak">0</div>
+            <div class="rank-stat-lbl">Série actuelle</div>
+          </div>
+          <div class="rank-stat">
+            <div class="rank-stat-icon">⚔️</div>
+            <div class="rank-stat-val" id="rs-pct">0%</div>
+            <div class="rank-stat-lbl">Mission accomplie</div>
+          </div>
+          <div class="rank-stat">
+            <div class="rank-stat-icon">📅</div>
+            <div class="rank-stat-val" id="rs-days">0</div>
+            <div class="rank-stat-lbl">Jours actifs</div>
+          </div>
+          <div class="rank-stat">
+            <div class="rank-stat-icon">🏅</div>
+            <div class="rank-stat-val" id="rs-medals">0</div>
+            <div class="rank-stat-lbl">Médailles</div>
+          </div>
+        </div>
+
+        <div class="medals-section">
+          <div class="lbl" id="medals-section-title" style="padding:0 0 10px">Médailles</div>
+          <div id="medals-list"></div>
+        </div>
+
+        <div style="padding:0 18px">
+          <div class="lbl" id="rank-ladder-title" style="padding:12px 0 10px">Échelle des rangs</div>
+          <div class="card">
+            <div class="card-body" style="padding:10px 14px">
+              <div id="ranks-ladder"></div>
+            </div>
+          </div>
+        </div>
+        <div style="height:8px"></div>
+
+      </div><!-- end tab-rang -->
+
+      <!-- ===== COACH TAB ===== -->
+      <div class="tab-panel" id="tab-coach">
+
+        <div class="coach-tab-header">
+          <div class="coach-tab-title" id="coach-tab-name">Quartier Général</div>
+          <div class="coach-tab-sub" id="coach-tab-sub">Briefing · Conseil · Paramètres</div>
+        </div>
+
+        <div class="weekly-bilan">
+          <div class="bilan-header">
+            <div class="bilan-badge" id="bilan-badge">Bilan hebdo</div>
+            <div class="bilan-week" id="bilan-week">Cette semaine</div>
+          </div>
+          <div class="bilan-text" id="bilan-text">Entre ton poids chaque jour pour obtenir une analyse personnalisée de ta progression.</div>
+        </div>
+
+        <div class="tip-of-day">
+          <div class="tip-icon">💡</div>
+          <div>
+            <div class="tip-label">Conseil du jour</div>
+            <div class="tip-text" id="tip-text">Charge en cours…</div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="lbl">Paramètres de mission</div>
+          <!-- XP Info in QG -->
+        <div class="settings-item" style="cursor:default;pointer-events:none">
+          <div class="settings-item-icon">⭐</div>
+          <div class="settings-item-info">
+            <div class="settings-item-label" id="qg-xp-label">Niveau 1 · 0 XP</div>
+            <div class="settings-item-sub" id="qg-xp-sub">Continue à logger pour gagner de l'XP</div>
+          </div>
+        </div>
+
+        <div class="settings-item" onclick="openToneModal()">
+            <div class="settings-item-icon" id="tone-icon-settings">⚔️</div>
+            <div class="settings-item-info">
+              <div class="settings-item-label" id="tone-label-settings">Mode Warrior</div>
+              <div class="settings-item-sub">Toucher pour changer le ton</div>
+            </div>
+            <div class="settings-item-arrow">›</div>
+          </div>
+          <div class="settings-item" onclick="openEditProfile()">
+            <div class="settings-item-icon">✏️</div>
+            <div class="settings-item-info">
+              <div class="settings-item-label">Modifier le profil</div>
+              <div class="settings-item-sub">Poids de départ, objectif, date</div>
+            </div>
+            <div class="settings-item-arrow">›</div>
+          </div>
+          <div class="settings-item" onclick="openTestMode()">
+            <div class="settings-item-icon">🧪</div>
+            <div class="settings-item-info">
+              <div class="settings-item-label">Injecter données test</div>
+              <div class="settings-item-sub">Simuler 30 jours de pesées</div>
+            </div>
+            <div class="settings-item-arrow">›</div>
+          </div>
+          <div class="settings-item danger" onclick="openResetModal()">
+            <div class="settings-item-icon">🗑️</div>
+            <div class="settings-item-info">
+              <div class="settings-item-label">Réinitialiser le compte</div>
+              <div class="settings-item-sub">Supprimer toutes les données</div>
+            </div>
+            <div class="settings-item-arrow" style="color:var(--red)">›</div>
+          </div>
+        </div>
+
+        <div class="version-line">WARSCALE V2 · QG opérationnel</div>
+
+      </div><!-- end tab-coach -->
+
+    </div><!-- end tabs-content -->
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-tab active" onclick="switchTab('home', this)">
+        <div class="nav-tab-icon">⌂</div>
+        <div class="nav-tab-label">Home</div>
+      </button>
+      <button class="nav-tab" onclick="switchTab('stats', this)">
+        <div class="nav-tab-icon">📊</div>
+        <div class="nav-tab-label">Stats</div>
+      </button>
+      <button class="nav-tab" onclick="switchTab('rang', this)">
+        <div class="nav-tab-icon">⚔️</div>
+        <div class="nav-tab-label">Rang</div>
+      </button>
+      <button class="nav-tab" onclick="switchTab('coach', this)">
+        <div class="nav-tab-icon">🏛️</div>
+        <div class="nav-tab-label">QG</div>
+      </button>
+    </nav>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+
+<!-- Success modal -->
+<div class="modal-overlay" id="modal-success">
+  <div class="modal-box">
+    <span class="modal-emoji" id="ms-emoji">⚔️</span>
+    <div class="modal-eyebrow" id="ms-eyebrow">Pesée enregistrée</div>
+    <div class="modal-title" id="ms-title">BIEN JOUÉ</div>
+    <div class="modal-sep"></div>
+    <div class="modal-msg" id="ms-msg">Continue comme ça.</div>
+    <button class="modal-close" onclick="closeModal('modal-success')">Fermer</button>
+  </div>
+</div>
+
+<!-- Reset confirm modal -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal-box">
+    <span class="modal-emoji">⚠️</span>
+    <div class="modal-eyebrow">Action irréversible</div>
+    <div class="modal-title" style="color:var(--red)">RESET</div>
+    <div class="modal-sep" style="background:rgba(231,111,81,0.5)"></div>
+    <div class="modal-msg">Toutes tes données — profil, historique, médailles — seront définitivement supprimées.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-reset')">Annuler</button>
+      <button class="btn-danger" onclick="confirmReset()">Tout effacer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tone modal -->
+<div class="modal-overlay" id="modal-tone">
+  <div class="modal-box">
+    <span class="modal-emoji">🎭</span>
+    <div class="modal-eyebrow">Mode de motivation</div>
+    <div class="modal-title">TON STYLE</div>
+    <div class="modal-sep"></div>
+    <div class="tone-grid" style="text-align:left;margin-bottom:20px">
+      <div class="tone-card" id="modal-tone-warrior" onclick="setTone('warrior')">
+        <div class="tone-card-icon">⚔️</div>
+        <div class="tone-card-name">Warrior</div>
+        <div class="tone-card-desc">Défi et dépassement</div>
+      </div>
+      <div class="tone-card" id="modal-tone-coach" onclick="setTone('coach')">
+        <div class="tone-card-icon">🌱</div>
+        <div class="tone-card-name">Coach</div>
+        <div class="tone-card-desc">Douceur et constance</div>
+      </div>
+    </div>
+    <button class="btn-cancel" onclick="closeModal('modal-tone')" style="width:100%">Fermer</button>
+  </div>
+</div>
+
+<!-- Level up overlay -->
+<div id="levelup-overlay">
+  <div class="levelup-rays"></div>
+  <div class="levelup-label">PROMOTION AU RANG</div>
+  <span class="levelup-emoji" id="lu-emoji">⚔️</span>
+  <div class="levelup-rank" id="lu-rank">SOLDAT</div>
+  <div class="levelup-sep"></div>
+  <div class="levelup-msg" id="lu-msg">Tu montes en grade. Le combat continue.</div>
+  <button class="levelup-close" onclick="closeLevelUp()">Continuer ⚔️</button>
+</div>
+
+<!-- STG Modal -->
+<div class="modal-overlay" id="modal-stg">
+  <div class="modal-box">
+    <span class="modal-emoji">🎯</span>
+    <div class="modal-eyebrow">Objectif court terme</div>
+    <div class="modal-title">TA CIBLE</div>
+    <div class="modal-sep"></div>
+    <div style="text-align:left;margin-bottom:16px">
+      <div class="ob-field">
+        <label>Perdre (kg)</label>
+        <input type="number" id="stg-kg-input" placeholder="ex: 2" step="0.5" min="0.5" max="20" inputmode="decimal" style="background:var(--bg);border:1px solid var(--bg3);border-radius:var(--r);padding:12px 14px;font-size:18px;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--text);width:100%;outline:none">
+      </div>
+      <div class="ob-field">
+        <label>En combien de jours</label>
+        <input type="number" id="stg-days-input" placeholder="ex: 14" step="1" min="3" max="90" inputmode="numeric" style="background:var(--bg);border:1px solid var(--bg3);border-radius:var(--r);padding:12px 14px;font-size:18px;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--text);width:100%;outline:none">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-stg')">Annuler</button>
+      <button class="btn-record" onclick="saveSTG()" style="flex:1;padding:12px">Valider ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confetti -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// ============================================================
+// DATA & CONSTANTS
+// ============================================================
+const STORAGE_PROFILE = 'ws2_profile';
+const STORAGE_WEIGHTS = 'ws2_weights';
+const STORAGE_XP = 'ws2_xp';
+const STORAGE_STG = 'ws2_stg'; // short term goal
+const XP_PER_LOG = 10;
+const XP_STREAK_BONUS = 5; // bonus par jour de streak
+const XP_LEVELS = [0,100,250,450,700,1000,1400,1900,2500,3200,4000];
+function xpToLevel(xp) {
+  for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= XP_LEVELS[i]) return i + 1;
+  }
+  return 1;
+}
+function xpToNextLevel(xp) {
+  const lvl = xpToLevel(xp);
+  if (lvl >= XP_LEVELS.length) return { current: xp, needed: 0, pct: 100 };
+  const base = XP_LEVELS[lvl - 1];
+  const next = XP_LEVELS[lvl];
+  return { current: xp - base, needed: next - base, pct: Math.round(((xp - base) / (next - base)) * 100) };
+}
+
+const RANKS = [
+  { id: 'recrue',      name: 'Recrue',      nameCoach: 'Débutant',      icon: '🪖', iconCoach: '🌱', min: 0,   max: 5   },
+  { id: 'soldat',      name: 'Soldat',       nameCoach: 'En mouvement',  icon: '🛡️', iconCoach: '🚶', min: 5,   max: 15  },
+  { id: 'sergent',     name: 'Sergent',      nameCoach: 'Régulier',      icon: '⚔️', iconCoach: '🌿', min: 15,  max: 30  },
+  { id: 'lieutenant',  name: 'Lieutenant',   nameCoach: 'Engagé',        icon: '🎖️', iconCoach: '💪', min: 30,  max: 50  },
+  { id: 'capitaine',   name: 'Capitaine',    nameCoach: 'Déterminé',     icon: '🏅', iconCoach: '🌸', min: 50,  max: 70  },
+  { id: 'commandant',  name: 'Commandant',   nameCoach: 'Avancé',        icon: '⭐', iconCoach: '✨', min: 70,  max: 85  },
+  { id: 'colonel',     name: 'Colonel',      nameCoach: 'Expert',        icon: '🌟', iconCoach: '🌺', min: 85,  max: 95  },
+  { id: 'general',     name: 'Général',      nameCoach: 'Accompli',      icon: '👑', iconCoach: '🦋', min: 95,  max: 100 },
+];
+
+const MEDALS = [
+  { id: 'first_log',    icon: '📌', name: 'Première pesée',    desc: 'La mission a commencé',         check: (w, s, p) => w.length >= 1 },
+  { id: 'week1',        icon: '⚡', name: 'Première semaine',  desc: '7 jours consécutifs',            check: (w, s) => s >= 7 },
+  { id: 'kg2',          icon: '🎯', name: 'Premier palier',    desc: '−2 kg atteints',                 check: (w, s, p) => totalLost(w, p) >= 2 },
+  { id: 'kg5',          icon: '🔥', name: 'Seuil de feu',      desc: '−5 kg atteints',                 check: (w, s, p) => totalLost(w, p) >= 5 },
+  { id: 'kg10',         icon: '💎', name: 'Diamant',           desc: '−10 kg atteints',                check: (w, s, p) => totalLost(w, p) >= 10 },
+  { id: 'streak14',     icon: '🏃', name: 'Momentum',          desc: '14 jours consécutifs',           check: (w, s) => s >= 14 },
+  { id: 'streak30',     icon: '🗡️', name: 'Mois de fer',       desc: '30 jours consécutifs',           check: (w, s) => s >= 30 },
+  { id: 'halfgoal',     icon: '⚔️', name: 'Mi-chemin',         desc: '50% de l\'objectif',             check: (w, s, p) => pctDone(w, p) >= 50 },
+  { id: 'goal',         icon: '👑', name: 'Général',           desc: 'Objectif atteint',               check: (w, s, p) => pctDone(w, p) >= 100 },
+];
+
+const TIPS = {
+  warrior: [
+    "Pèse-toi toujours le matin, à jeun, après les toilettes. La précision est une arme.",
+    "La balance ne ment pas. Les excuses, oui. Reste dans le vrai.",
+    "Un plateau n'est pas un échec — c'est ton corps qui se prépare au prochain assaut.",
+    "La variation quotidienne de ±1 kg est normale. C'est la tendance sur 7j qui compte.",
+    "Hydratation = performance. 2L d'eau/jour minimise les fausses hausses de poids.",
+    "Le weekend est ton vrai adversaire. Prépare-toi dès le vendredi.",
+    "Chaque kilo perdu est une victoire permanente. Personne ne peut te la reprendre.",
+    "Le sommeil est aussi une arme. 7-8h = meilleure régulation hormonale.",
+    "Ne compare pas ta progression à celle des autres. Ton seul ennemi : la version d'hier.",
+    "La constance bat l'intensité. Un effort soutenu surpasse toujours un sprint épuisé.",
+  ],
+  coach: [
+    "Commence chaque journée avec une intention claire. Ton corps suit ton mental.",
+    "La perte de poids n'est pas linéaire. Les plateaux font partie du processus.",
+    "Célèbre chaque petite victoire — elles construisent ta confiance sur la durée.",
+    "Écoute ton corps. La pesée est un outil, pas un jugement.",
+    "L'hydratation régule naturellement ton poids. Bois avant d'avoir soif.",
+    "Le weekend, savoure sans culpabiliser. L'équilibre est la clé du long terme.",
+    "Chaque jour où tu te pèses est un jour où tu choisis de rester conscient.",
+    "La régularité crée la routine. La routine crée les résultats.",
+    "Ton progrès est réel, même quand tu ne le vois pas encore sur la balance.",
+    "Prends soin de toi comme tu prendrais soin d'un ami que tu aimes.",
+  ]
+};
+
+const WARRIOR_MSGS = [
+  { test: (d) => d < -0.5, emoji: '🔥', eyebrow: 'Progression', title: 'EN FEU', msg: 'Tu avances comme une machine. Ne t\'arrête pas.' },
+  { test: (d) => d < 0,    emoji: '⚔️', eyebrow: 'Combat',       title: 'EN MARCHE', msg: 'Chaque gramme perdu est un ennemi abattu. Continue.' },
+  { test: (d) => d === 0,  emoji: '🛡️', eyebrow: 'Stable',       title: 'TIENS BON', msg: 'Stable. La bataille continue. Ne lâche rien.' },
+  { test: (d) => d > 0,    emoji: '⚔️', eyebrow: 'Rebond',        title: 'RIPOSTE', msg: 'Petite hausse. Ton corps se bat. Riposte demain.' },
+];
+const COACH_MSGS = [
+  { test: (d) => d < -0.5, emoji: '🌟', eyebrow: 'Excellent', title: 'SUPERBE', msg: 'Belle performance ! Ton corps répond parfaitement.' },
+  { test: (d) => d < 0,    emoji: '✨', eyebrow: 'Bien',       title: 'EN ROUTE', msg: 'Tu vas dans la bonne direction. Sois fier de toi.' },
+  { test: (d) => d === 0,  emoji: '🌱', eyebrow: 'Stable',     title: 'PATIENT', msg: 'La constance paie sur la durée. Continue doucement.' },
+  { test: (d) => d > 0,    emoji: '💙', eyebrow: 'Normale',    title: 'DOUCEUR', msg: 'Variation naturelle. Prends soin de toi aujourd\'hui.' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let PROF = null;
+let WEIGHTS = [];
+let TONE = 'warrior';
+let currentPeriod = 7;
+let chartInstance = null;
+let prevRankId = null;
+let obToneSelected = 'warrior';
+let XP = 0;
+
+// ============================================================
+// UTILS
+// ============================================================
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+const load = (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e) { return def; } };
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const formatDate = (str) => {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+};
+const formatDateLong = (d) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+function totalLost(w, p) {
+  if (!w || !w.length || !p) return 0;
+  const latest = w[w.length - 1].kg;
+  return Math.max(0, p.start - latest);
+}
+function pctDone(w, p) {
+  if (!w || !w.length || !p || p.start <= p.goal) return 0;
+  const lost = totalLost(w, p);
+  const total = p.start - p.goal;
+  return Math.min(100, Math.round((lost / total) * 100));
+}
+function calcStreak(weights) {
+  if (!weights || weights.length === 0) return 0;
+  const sorted = [...weights].sort((a, b) => a.date < b.date ? 1 : -1);
+  const today = todayStr();
+  let streak = 0;
+  let expected = today;
+  for (const w of sorted) {
+    if (w.date === expected) {
+      streak++;
+      const d = new Date(expected + 'T12:00:00');
+      d.setDate(d.getDate() - 1);
+      expected = d.toISOString().slice(0, 10);
+    } else if (w.date < expected) {
+      break;
+    }
+  }
+  return streak;
+}
+function calcVelocity(weights, days = 14) {
+  if (!weights || weights.length < 2) return 0;
+  const sorted = [...weights].sort((a, b) => a.date < b.date ? -1 : 1);
+  const recent = sorted.slice(-Math.min(days + 1, sorted.length));
+  if (recent.length < 2) return 0;
+  const diff = recent[0].kg - recent[recent.length - 1].kg;
+  const daysDiff = (new Date(recent[recent.length-1].date) - new Date(recent[0].date)) / 86400000;
+  if (daysDiff <= 0) return 0;
+  return (diff / daysDiff) * 7;
+}
+function getRank(pct) {
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (pct >= RANKS[i].min) return RANKS[i];
+  }
+  return RANKS[0];
+}
+function rankName(r) { return TONE === 'coach' ? r.nameCoach : r.name; }
+function rankIcon(r) { return TONE === 'coach' ? r.iconCoach : r.icon; }
+function getUnlockedMedals(weights, streak, prof) {
+  return MEDALS.filter(m => m.check(weights, streak, prof));
+}
+
+// ============================================================
+// ONBOARDING
+// ============================================================
+let obStep = 0;
+
+function obNextStep(from) {
+  if (from === 0) {
+    const start = parseFloat(document.getElementById('ob-start').value);
+    const goal = parseFloat(document.getElementById('ob-goal').value);
+    if (isNaN(start) || isNaN(goal) || start <= goal) {
+      document.getElementById('ob-start').style.borderColor = 'rgba(231,111,81,0.6)';
+      document.getElementById('ob-goal').style.borderColor = 'rgba(231,111,81,0.6)';
+      setTimeout(() => {
+        document.getElementById('ob-start').style.borderColor = '';
+        document.getElementById('ob-goal').style.borderColor = '';
+      }, 1500);
+      return;
+    }
+    obStep = 1;
+  } else if (from === 1) {
+    const start = parseFloat(document.getElementById('ob-start').value);
+    const goal = parseFloat(document.getElementById('ob-goal').value);
+    document.getElementById('confirm-start').textContent = start.toFixed(1) + ' kg';
+    document.getElementById('confirm-goal').textContent = goal.toFixed(1) + ' kg';
+    document.getElementById('confirm-diff').textContent = '− ' + (start - goal).toFixed(1) + ' kg';
+    obStep = 2;
+  }
+  document.querySelector('.ob-step.active').classList.remove('active');
+  document.getElementById('ob-step-' + obStep).classList.add('active');
+  document.querySelectorAll('.ob-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === obStep);
+  });
+}
+
+function selectTone(tone) {
+  obToneSelected = tone;
+  document.getElementById('tone-warrior').classList.toggle('selected', tone === 'warrior');
+  document.getElementById('tone-coach').classList.toggle('selected', tone === 'coach');
+}
+
+function obFinish() {
+  const start = parseFloat(document.getElementById('ob-start').value);
+  const goal = parseFloat(document.getElementById('ob-goal').value);
+  const date = document.getElementById('ob-date').value || '';
+  const occasion = document.getElementById('ob-occasion').value || '';
+  PROF = { start, goal, date, occasion, tone: obToneSelected, created: todayStr() };
+  WEIGHTS = [{ date: todayStr(), kg: start }];
+  save(STORAGE_PROFILE, PROF);
+  save(STORAGE_WEIGHTS, WEIGHTS);
+  // Award XP
+  if (!isUpdate) {
+    const streak = calcStreak(WEIGHTS);
+    const gained = XP_PER_LOG + (streak > 1 ? XP_STREAK_BONUS : 0);
+    const oldLevel = xpToLevel(XP);
+    XP += gained;
+    save(STORAGE_XP, XP);
+    const newLevel = xpToLevel(XP);
+    if (newLevel > oldLevel) {
+      setTimeout(() => showXPLevelUp(newLevel), 800);
+    }
+  }
+  TONE = obToneSelected;
+  XP = 0;
+  save(STORAGE_XP, XP);
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('main-app').style.display = 'flex';
+  initApp();
+  // Focus weight input
+  setTimeout(() => {
+    document.getElementById('weight-input').focus();
+  }, 600);
+}
+
+// ============================================================
+// APP INIT
+// ============================================================
+function initApp() {
+  TONE = PROF.tone || 'warrior';
+  loadSTG();
+  prevRankId = getRank(pctDone(WEIGHTS, PROF)).id;
+  updateAll();
+  // Render chart after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
+}
+
+function updateAll() {
+  updateTabLabels();
+  updateHome();
+  updateRang();
+  updateCoach();
+  updateStats();
+}
+function updateTabLabels() {
+  const isCoach = TONE === 'coach';
+  // Rang tab
+  const rangTab = document.querySelector('.nav-tab:nth-child(3)');
+  if (rangTab) {
+    rangTab.querySelector('.nav-tab-icon').textContent = isCoach ? '🌿' : '⚔️';
+    rangTab.querySelector('.nav-tab-label').textContent = isCoach ? 'PROGRÈS' : 'RANG';
+  }
+  // QG/BASE tab
+  const qgTab = document.querySelector('.nav-tab:nth-child(4)');
+  if (qgTab) {
+    qgTab.querySelector('.nav-tab-icon').textContent = isCoach ? '🏕️' : '🏛️';
+    qgTab.querySelector('.nav-tab-label').textContent = isCoach ? 'BASE' : 'QG';
+  }
+  // Rang tab section title
+  const rangTitle = document.querySelector('#tab-rang .rank-level');
+  // QG tab title
+  const level = xpToLevel(XP);
+  const qgSubExtra = ` · NV.${level}`;
+  document.getElementById('coach-tab-name').textContent = isCoach ? 'Base · Suivi & Réglages' : 'Quartier Général';
+  document.getElementById('coach-tab-sub').textContent = isCoach ? 'Bilan · Conseil · Paramètres' : 'Briefing · Conseil · Paramètres';
+}
+
+// ============================================================
+// HOME
+// ============================================================
+function updateHome() {
+  const streak = calcStreak(WEIGHTS);
+  const sorted = [...WEIGHTS].sort((a, b) => a.date < b.date ? -1 : 1);
+  const latest = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+  const pct = pctDone(WEIGHTS, PROF);
+  const velocity = calcVelocity(WEIGHTS);
+  const today = todayStr();
+
+  // Streak
+  document.getElementById('streak-days').textContent = streak;
+  const streakFire = document.getElementById('streak-fire');
+  streakFire.textContent = streak === 0 ? '💤' : streak >= 14 ? '🔥🔥' : '🔥';
+
+  // Rank badge
+  const rank = getRank(pct);
+  document.getElementById('streak-badge').textContent = rankName(rank).toUpperCase();
+
+  // Ring
+  const circumference = 446;
+  const offset = circumference - (circumference * Math.min(pct, 100) / 100);
+  const circle = document.getElementById('ring-circle');
+  circle.style.strokeDashoffset = offset;
+  document.getElementById('ring-pct').textContent = pct + '%';
+
+  // Stats
+  document.getElementById('stat-current').textContent = latest ? latest.kg.toFixed(1) : '—';
+  if (prev && latest) {
+    const delta = latest.kg - prev.kg;
+    const el = document.getElementById('stat-delta');
+    el.textContent = (delta > 0 ? '+' : '') + delta.toFixed(1);
+    el.className = 'stat-val ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '');
+  } else {
+    document.getElementById('stat-delta').textContent = '—';
+  }
+  const lost = totalLost(WEIGHTS, PROF);
+  const lostEl = document.getElementById('stat-lost');
+  lostEl.textContent = lost > 0 ? '−' + lost.toFixed(1) : '0.0';
+  lostEl.className = 'stat-val ' + (lost > 0 ? 'down' : '');
+
+  // ETA
+  updateETA(velocity);
+
+  // Coach message
+  updateCoachMessage(latest, prev);
+
+  // Input state
+  const todayLogged = WEIGHTS.find(w => w.date === today);
+  const alreadyDiv = document.getElementById('already-logged');
+  if (todayLogged) {
+    alreadyDiv.classList.add('show');
+    document.getElementById('today-logged-val').textContent = todayLogged.kg.toFixed(1);
+    document.getElementById('btn-record').classList.add('saved');
+    document.getElementById('weight-input').value = todayLogged.kg;
+  } else {
+    alreadyDiv.classList.remove('show');
+    document.getElementById('btn-record').classList.remove('saved');
+  }
+
+  // Date label
+  const now = new Date();
+  document.getElementById('input-date-label').textContent =
+    'Poids du ' + now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // XP bar
+  updateXPBar();
+  // Short-term goal
+  updateSTGCard();
+  // History
+  renderHistory(sorted);
+}
+
+function updateETA(velocity) {
+  const etaCard = document.getElementById('eta-card');
+  if (velocity <= 0 || WEIGHTS.length < 3) {
+    etaCard.style.opacity = '0.4';
+    document.getElementById('eta-date').textContent = 'Données insuffisantes';
+    document.getElementById('eta-days-left').textContent = 'Continue à te peser';
+    document.getElementById('eta-pace').textContent = '—';
+    return;
+  }
+  const sorted = [...WEIGHTS].sort((a, b) => a.date < b.date ? -1 : 1);
+  const latest = sorted[sorted.length - 1];
+  const toGo = latest.kg - PROF.goal;
+  const daysNeeded = Math.ceil((toGo / velocity) * 7);
+  const eta = new Date();
+  eta.setDate(eta.getDate() + daysNeeded);
+  etaCard.style.opacity = '1';
+  document.getElementById('eta-date').textContent = formatDateLong(eta);
+  document.getElementById('eta-days-left').textContent = 'Dans ' + daysNeeded + ' jours si tu maintiens le rythme';
+  const paceEl = document.getElementById('eta-pace');
+  paceEl.textContent = velocity.toFixed(2);
+  paceEl.className = 'eta-pace-val ' + (velocity > 0 ? 'down' : '');
+}
+
+function updateCoachMessage(latest, prev) {
+  if (!latest) return;
+  const delta = prev ? (latest.kg - prev.kg) : 0;
+  const streak = calcStreak(WEIGHTS);
+  const msgs = TONE === 'warrior' ? WARRIOR_MSGS : COACH_MSGS;
+  const msg = msgs.find(m => m.test(delta)) || msgs[msgs.length - 1];
+  // Streak override messages
+  let finalMsg = msg.msg;
+  let finalIcon = msg.emoji;
+  if (streak >= 30) {
+    finalIcon = '👑'; finalMsg = TONE === 'warrior'
+      ? `<strong>${streak} jours</strong> de série. Tu es une machine. Légendaire.`
+      : `<strong>${streak} jours</strong> consécutifs ! C'est remarquable. Tu es un exemple.`;
+  } else if (streak >= 14) {
+    finalIcon = '🔥'; finalMsg = TONE === 'warrior'
+      ? `<strong>${streak} jours</strong> sans faillir. La discipline est devenue ton mode de vie.`
+      : `<strong>${streak} jours</strong> de constance ! Ton engagement est admirable.`;
+  } else if (streak >= 7) {
+    finalIcon = '⚡'; finalMsg = TONE === 'warrior'
+      ? `<strong>${streak} jours</strong> de présence. La semaine est bouclée. Tiens encore.`
+      : `Une semaine complète ! <strong>${streak} jours</strong> de régularité — c'est ça, le vrai progrès.`;
+  } else if (streak === 0) {
+    finalIcon = '⚠️'; finalMsg = TONE === 'warrior'
+      ? "Série brisée. Reprends le contrôle aujourd'hui — pas demain."
+      : "Petite pause dans la série. C'est ok, aujourd'hui c'est un nouveau départ.";
+  }
+  document.getElementById('coach-icon').textContent = finalIcon;
+  document.getElementById('coach-text').innerHTML = finalMsg;
+}
+
+function renderHistory(sorted) {
+  const list = document.getElementById('hist-list');
+  const today = todayStr();
+  const recent = sorted.slice().reverse().slice(0, 7);
+  if (recent.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text3)">Aucune donnée encore</div>';
+    return;
+  }
+  list.innerHTML = recent.map((w, i) => {
+    const prev = sorted[sorted.length - 2 - i];
+    let deltaHtml = '';
+    if (prev) {
+      const d = w.kg - prev.kg;
+      const cls = d > 0 ? 'pos' : d < 0 ? 'neg' : '';
+      const sign = d > 0 ? '+' : '';
+      deltaHtml = `<div class="hist-delta ${cls}">${sign}${d.toFixed(1)}</div>`;
+    }
+    const isToday = w.date === today;
+    return `<div class="hist-item">
+      <div class="hist-date ${isToday ? 'today' : ''}">${isToday ? 'Aujourd\'hui' : formatDate(w.date)}</div>
+      <div class="hist-kg">${w.kg.toFixed(1)} kg</div>
+      ${deltaHtml}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RECORD WEIGHT
+// ============================================================
+function recordWeight() {
+  const val = parseFloat(document.getElementById('weight-input').value);
+  if (isNaN(val) || val < 30 || val > 400) {
+    document.getElementById('weight-input').style.borderColor = 'rgba(231,111,81,0.6)';
+    setTimeout(() => document.getElementById('weight-input').style.borderColor = '', 1200);
+    return;
+  }
+
+  const today = todayStr();
+  const existing = WEIGHTS.findIndex(w => w.date === today);
+  const isUpdate = existing >= 0;
+  if (isUpdate) {
+    WEIGHTS[existing].kg = val;
+  } else {
+    WEIGHTS.push({ date: today, kg: val });
+  }
+  save(STORAGE_WEIGHTS, WEIGHTS);
+
+  // Check rank up BEFORE update
+  const oldPct = isUpdate ? pctDone(WEIGHTS, PROF) : pctDone(WEIGHTS.slice(0, -1), PROF);
+  const oldRank = getRank(oldPct);
+
+  updateAll();
+  requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
+
+  // Check new rank
+  const newPct = pctDone(WEIGHTS, PROF);
+  const newRank = getRank(newPct);
+  if (newRank.id !== prevRankId && WEIGHTS.length > 1) {
+    setTimeout(() => showLevelUp(newRank), 400);
+    prevRankId = newRank.id;
+    return;
+  }
+  prevRankId = newRank.id;
+
+  // Show success modal
+  const sorted = [...WEIGHTS].sort((a,b) => a.date < b.date ? -1 : 1);
+  const prev = sorted[sorted.length - 2];
+  const delta = prev ? (val - prev.kg) : 0;
+  const msgs = TONE === 'warrior' ? WARRIOR_MSGS : COACH_MSGS;
+  const msg = msgs.find(m => m.test(delta)) || msgs[msgs.length - 1];
+  document.getElementById('ms-emoji').textContent = msg.emoji;
+  document.getElementById('ms-eyebrow').textContent = msg.eyebrow;
+  document.getElementById('ms-title').textContent = msg.title;
+  document.getElementById('ms-msg').textContent = msg.msg;
+  openModal('modal-success');
+  confetti();
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  const sorted = [...WEIGHTS].sort((a, b) => a.date < b.date ? -1 : 1);
+  const velocity = calcVelocity(WEIGHTS);
+  const lost = totalLost(WEIGHTS, PROF);
+  const streak = calcStreak(WEIGHTS);
+
+  // Velocity
+  const velEl = document.getElementById('an-velocity');
+  velEl.textContent = velocity > 0 ? velocity.toFixed(2) : '—';
+  velEl.style.color = velocity > 0 ? 'var(--green)' : 'var(--text3)';
+
+  // Total
+  document.getElementById('an-total').textContent = lost > 0 ? '−' + lost.toFixed(1) : '0.0';
+
+  // Best week
+  let bestWeek = 0;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const diff = sorted[i].kg - sorted[i+1].kg;
+    if (diff > bestWeek) bestWeek = diff;
+  }
+  // compute weekly max
+  let weeklyMax = 0;
+  for (let i = 7; i <= sorted.length; i++) {
+    const weekDiff = sorted[i-7] ? sorted[i-7].kg - sorted[i-1].kg : 0;
+    if (weekDiff > weeklyMax) weeklyMax = weekDiff;
+  }
+  document.getElementById('an-best-week').textContent = weeklyMax > 0 ? '−' + weeklyMax.toFixed(1) : '—';
+
+  // Consistency
+  if (sorted.length >= 2) {
+    const firstDate = new Date(sorted[0].date + 'T12:00:00');
+    const lastDate = new Date(sorted[sorted.length-1].date + 'T12:00:00');
+    const totalDays = Math.max(1, Math.round((lastDate - firstDate) / 86400000) + 1);
+    const consistency = Math.min(100, Math.round((sorted.length / totalDays) * 100));
+    document.getElementById('an-consistency').textContent = consistency + '%';
+  } else {
+    document.getElementById('an-consistency').textContent = '—';
+  }
+
+  // Alerts
+  // Plateau: last 5 days variance < 0.3
+  const alertPlateau = document.getElementById('alert-plateau');
+  const alertGood = document.getElementById('alert-good');
+  if (sorted.length >= 5) {
+    const last5 = sorted.slice(-5).map(w => w.kg);
+    const vari = Math.max(...last5) - Math.min(...last5);
+    if (vari < 0.4) {
+      alertPlateau.classList.add('show');
+      alertGood.classList.remove('show');
+    } else if (velocity > 0.5) {
+      alertPlateau.classList.remove('show');
+      alertGood.classList.add('show');
+      document.getElementById('alert-good-msg').textContent =
+        `Tu perds ${velocity.toFixed(2)} kg/sem. Un rythme excellent et durable.`;
+    } else {
+      alertPlateau.classList.remove('show');
+      alertGood.classList.remove('show');
+    }
+  } else {
+    alertPlateau.classList.remove('show');
+    alertGood.classList.remove('show');
+  }
+
+  // Weekend analysis
+  const weekendEl = document.getElementById('weekend-analysis');
+  const monWeights = sorted.filter(w => new Date(w.date + 'T12:00:00').getDay() === 1);
+  const friWeights = sorted.filter(w => new Date(w.date + 'T12:00:00').getDay() === 5);
+  if (monWeights.length >= 2 && friWeights.length >= 2) {
+    const avgMon = monWeights.reduce((a,b) => a + b.kg, 0) / monWeights.length;
+    const avgFri = friWeights.reduce((a,b) => a + b.kg, 0) / friWeights.length;
+    const diff = avgMon - avgFri;
+    weekendEl.style.display = 'block';
+    document.getElementById('weekend-msg').innerHTML = diff > 0.2
+      ? `Tu reprends en moyenne <strong>+${diff.toFixed(1)} kg</strong> sur le weekend. Le lundi est ta zone à risque.`
+      : diff < -0.1
+      ? `Tu gères parfaitement les weekends — tu continues même à progresser (<strong>${diff.toFixed(1)} kg</strong> en moyenne).`
+      : `Tes weekends sont <strong>stables</strong>. Bonne maîtrise.`;
+  } else {
+    weekendEl.style.display = 'none';
+  }
+}
+
+// ============================================================
+// CHART
+// ============================================================
+function renderChart() {
+  const canvas = document.getElementById('weight-chart');
+  if (!canvas) return;
+  const sorted = [...WEIGHTS].sort((a, b) => a.date < b.date ? -1 : 1);
+  let data = sorted;
+  if (currentPeriod > 0) {
+    data = sorted.slice(-currentPeriod);
+  }
+  if (data.length === 0) return;
+  const labels = data.map(w => formatDate(w.date));
+  const vals = data.map(w => w.kg);
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, 'rgba(201,168,76,0.2)');
+  gradient.addColorStop(1, 'rgba(201,168,76,0)');
+
+  // Goal line
+  const goalData = data.map(() => PROF.goal);
+
+  // Ideal trajectory: linear from start weight to goal over full period
+  const allSorted = [...WEIGHTS].sort((a,b) => a.date < b.date ? -1 : 1);
+  const firstDate = new Date(allSorted[0].date + 'T12:00:00');
+  const idealData = data.map(w => {
+    const d = new Date(w.date + 'T12:00:00');
+    const daysSinceStart = Math.max(0, (d - firstDate) / 86400000);
+    // velocity based on profile target date or default 90 days
+    let totalDays = 90;
+    if (PROF.date) {
+      const targetDate = new Date(PROF.date + 'T12:00:00');
+      totalDays = Math.max(30, (targetDate - firstDate) / 86400000);
+    }
+    const idealKg = PROF.start - ((PROF.start - PROF.goal) * (daysSinceStart / totalDays));
+    return Math.max(PROF.goal, Math.round(idealKg * 10) / 10);
+  });
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Poids',
+          data: vals,
+          borderColor: '#c9a84c',
+          borderWidth: 2,
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#c9a84c',
+          pointRadius: data.length > 20 ? 0 : 3,
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'Trajectoire idéale',
+          data: idealData,
+          borderColor: 'rgba(106,177,135,0.5)',
+          borderWidth: 1.5,
+          borderDash: [6, 3],
+          backgroundColor: 'transparent',
+          fill: false,
+          pointRadius: 0,
+          tension: 0,
+        },
+        {
+          label: 'Objectif',
+          data: goalData,
+          borderColor: 'rgba(201,168,76,0.2)',
+          borderWidth: 1,
+          borderDash: [2, 4],
+          backgroundColor: 'transparent',
+          fill: false,
+          pointRadius: 0,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            color: '#3a3020',
+            font: { size: 10, family: "'Barlow Condensed'" },
+            boxWidth: 16,
+            padding: 10,
+            filter: (item) => item.text !== 'Objectif',
+          }
+        },
+        tooltip: {
+          backgroundColor: '#1e1e1e',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#c9a84c',
+          bodyColor: '#f0ead6',
+          padding: 10,
+          callbacks: {
+            label: (ctx) => ctx.dataset.label === 'Poids' ? ` ${ctx.parsed.y.toFixed(1)} kg` : null
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+          ticks: { color: '#3a3020', font: { size: 10, family: "'Barlow Condensed'" }, maxTicksLimit: 7 },
+          border: { display: false }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+          ticks: { color: '#3a3020', font: { size: 10, family: "'Barlow Condensed'" },
+            callback: v => v.toFixed(1) },
+          border: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function setPeriod(days, btn) {
+  currentPeriod = days;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
+}
+
+// ============================================================
+// RANG
+// ============================================================
+function updateRang() {
+  const pct = pctDone(WEIGHTS, PROF);
+  const streak = calcStreak(WEIGHTS);
+  const rank = getRank(pct);
+  const rankIdx = RANKS.findIndex(r => r.id === rank.id);
+  const nextRank = RANKS[Math.min(rankIdx + 1, RANKS.length - 1)];
+
+  document.getElementById('rank-emblem').textContent = rankIcon(rank);
+  document.getElementById('rank-name').textContent = rankName(rank).toUpperCase();
+  const levelPrefix = TONE === 'coach' ? 'Niveau' : 'Rang';
+  document.getElementById('rank-level').textContent = `${levelPrefix} ${toRoman(rankIdx + 1)} · ${pct}% de l'objectif`;
+
+  // Progress within current rank
+  const span = rank.max - rank.min;
+  const within = Math.max(0, pct - rank.min);
+  const rankPct = span > 0 ? Math.min(100, Math.round((within / span) * 100)) : 100;
+  document.getElementById('rank-progress-fill').style.width = rankPct + '%';
+  document.getElementById('rank-current-label').textContent = rankName(rank);
+  document.getElementById('rank-next-label').textContent = rankIdx < RANKS.length - 1 ? rankName(nextRank) : (TONE === 'coach' ? 'Objectif atteint ✓' : 'Objectif atteint');
+
+  // Stats
+  document.getElementById('rs-streak').textContent = streak;
+  document.getElementById('rs-pct').textContent = pct + '%';
+  document.getElementById('rs-days').textContent = WEIGHTS.length;
+  const unlocked = getUnlockedMedals(WEIGHTS, streak, PROF);
+  const medalsTitleEl = document.getElementById('medals-section-title');
+  if (medalsTitleEl) medalsTitleEl.textContent = TONE === 'coach' ? 'Récompenses' : 'Médailles';
+  document.getElementById('rs-medals').textContent = unlocked.length;
+
+  // Medals
+  const medalsList = document.getElementById('medals-list');
+  medalsList.innerHTML = MEDALS.map(m => {
+    const isUnlocked = unlocked.some(u => u.id === m.id);
+    return `<div class="medal-item ${isUnlocked ? 'unlocked' : 'locked'}">
+      <div class="medal-icon">${m.icon}</div>
+      <div class="medal-info">
+        <div class="medal-name">${m.name}</div>
+        <div class="medal-desc">${m.desc}</div>
+      </div>
+      <div class="medal-status">${isUnlocked ? '✓ Obtenue' : 'Verrouillée'}</div>
+    </div>`;
+  }).join('');
+
+  // Ranks ladder
+  const ladder = document.getElementById('ranks-ladder');
+  const ladderTitle = TONE === 'coach' ? 'Étapes de progression' : 'Échelle des rangs';
+  const ladderTitleEl = document.getElementById('rank-ladder-title');
+  if (ladderTitleEl) ladderTitleEl.textContent = ladderTitle;
+  ladder.innerHTML = RANKS.map((r, i) => {
+    const isCurrent = r.id === rank.id;
+    const isPassed = pct >= r.max && r.id !== 'general';
+    return `<div class="rank-row ${isCurrent ? 'current' : ''} ${isPassed ? 'passed' : ''}">
+      <div class="rank-row-icon">${rankIcon(r)}</div>
+      <div class="rank-row-info">
+        <div class="rank-row-name">${rankName(r)}</div>
+        <div class="rank-row-req">${r.min}% – ${r.max === 100 ? '100%' : r.max + '%'} de l'objectif</div>
+      </div>
+      <div class="rank-row-badge">Actif</div>
+    </div>`;
+  }).join('');
+}
+
+function toRoman(n) {
+  const vals = [['VIII',8],['VII',7],['VI',6],['V',5],['IV',4],['III',3],['II',2],['I',1]];
+  for (const [s,v] of vals) if (n >= v) return s;
+  return 'I';
+}
+
+// ============================================================
+// COACH TAB
+// ============================================================
+function updateCoach() {
+  // XP display in QG
+  const lvl = xpToLevel(XP);
+  const prog = xpToNextLevel(XP);
+  const qgXpLabel = document.getElementById('qg-xp-label');
+  const qgXpSub = document.getElementById('qg-xp-sub');
+  if (qgXpLabel) qgXpLabel.textContent = `Niveau ${lvl} · ${XP} XP`;
+  if (qgXpSub) {
+    qgXpSub.textContent = prog.needed > 0
+      ? `${prog.current} / ${prog.needed} XP → Niveau ${lvl + 1}`
+      : 'Niveau maximum atteint ⭐';
+  }
+  // Tone
+  document.getElementById('tone-icon-settings').textContent = TONE === 'warrior' ? '⚔️' : '🌱';
+  document.getElementById('tone-label-settings').textContent = TONE === 'warrior' ? 'Mode Warrior' : 'Mode Coach';
+  // tab name handled by updateTabLabels()
+
+  // Tip of day
+  const tips = TIPS[TONE];
+  const dayIndex = new Date().getDate() % tips.length;
+  document.getElementById('tip-text').textContent = tips[dayIndex];
+
+  // Weekly bilan
+  const sorted = [...WEIGHTS].sort((a, b) => a.date < b.date ? -1 : 1);
+  const weekData = sorted.slice(-7);
+  if (weekData.length >= 2) {
+    const weekLost = weekData[0].kg - weekData[weekData.length - 1].kg;
+    const velocity = calcVelocity(WEIGHTS);
+    const pct = pctDone(WEIGHTS, PROF);
+    let bilanText = '';
+    if (TONE === 'warrior') {
+      bilanText = weekLost > 0
+        ? `Cette semaine, tu as éliminé <strong>${weekLost.toFixed(1)} kg</strong>. Ta vélocité est de <strong>${velocity.toFixed(2)} kg/semaine</strong>. Tu as accompli <strong>${pct}%</strong> de ta mission.`
+        : weekLost === 0
+        ? `Semaine stable. Tu tiens le terrain. La vélocité globale reste à <strong>${velocity.toFixed(2)} kg/semaine</strong>. La discipline est ta force.`
+        : `La semaine a été difficile — <strong>${Math.abs(weekLost).toFixed(1)} kg</strong> de terrain perdu. Ce n'est qu'une bataille. La guerre continue.`;
+    } else {
+      bilanText = weekLost > 0
+        ? `Belle semaine ! Tu as progressé de <strong>${weekLost.toFixed(1)} kg</strong>. Ta tendance globale est de <strong>${velocity.toFixed(2)} kg/semaine</strong> — un rythme sain et durable.`
+        : weekLost === 0
+        ? `Semaine stable. Maintenir son poids est aussi une victoire. Continue avec bienveillance.`
+        : `Petite remontée cette semaine. C'est tout à fait normal et temporaire. L'essentiel est de rester constant.`;
+    }
+    document.getElementById('bilan-text').innerHTML = bilanText;
+    document.getElementById('bilan-week').textContent = `Du ${formatDate(weekData[0].date)} au ${formatDate(weekData[weekData.length-1].date)}`;
+    document.getElementById('bilan-badge').textContent = TONE === 'coach' ? 'Bilan semaine' : 'Bilan hebdo';
+  } else {
+    document.getElementById('bilan-text').textContent = 'Continue à te peser chaque jour pour recevoir ton analyse hebdomadaire personnalisée.';
+  }
+}
+
+// ============================================================
+// XP
+// ============================================================
+function updateXPBar() {
+  const level = xpToLevel(XP);
+  const prog = xpToNextLevel(XP);
+  document.getElementById('xp-level-label').textContent = 'NV. ' + level;
+  document.getElementById('xp-val-label').textContent = XP + ' XP';
+  document.getElementById('xp-bar-fill').style.width = prog.pct + '%';
+  if (prog.needed > 0) {
+    document.getElementById('xp-next-label').textContent =
+      prog.current + ' / ' + prog.needed + ' XP → Niveau ' + (level + 1);
+  } else {
+    document.getElementById('xp-next-label').textContent = 'Niveau maximum atteint ⭐';
+  }
+}
+
+// ============================================================
+// SHORT TERM GOAL
+// ============================================================
+let STG = null; // { kg, days, startKg, startDate }
+
+function loadSTG() {
+  STG = load(STORAGE_STG, null);
+}
+function openSTGModal() {
+  if (STG) {
+    document.getElementById('stg-kg-input').value = STG.kg;
+    document.getElementById('stg-days-input').value = STG.days;
+  } else {
+    document.getElementById('stg-kg-input').value = '';
+    document.getElementById('stg-days-input').value = '';
+  }
+  openModal('modal-stg');
+}
+function saveSTG() {
+  const kg = parseFloat(document.getElementById('stg-kg-input').value);
+  const days = parseInt(document.getElementById('stg-days-input').value);
+  if (isNaN(kg) || isNaN(days) || kg <= 0 || days <= 0) return;
+  const sorted = [...WEIGHTS].sort((a,b) => a.date < b.date ? -1 : 1);
+  const latest = sorted[sorted.length - 1];
+  STG = { kg, days, startKg: latest ? latest.kg : PROF.start, startDate: todayStr() };
+  save(STORAGE_STG, STG);
+  closeModal('modal-stg');
+  updateSTGCard();
+}
+function updateSTGCard() {
+  const cardEl = document.getElementById('stg-card');
+  const emptyEl = document.getElementById('stg-empty');
+  if (!STG) {
+    cardEl.style.display = 'none';
+    emptyEl.style.display = 'flex';
+    return;
+  }
+  cardEl.style.display = 'block';
+  emptyEl.style.display = 'none';
+
+  const sorted = [...WEIGHTS].sort((a,b) => a.date < b.date ? -1 : 1);
+  const latest = sorted[sorted.length - 1];
+  const currentKg = latest ? latest.kg : STG.startKg;
+  const lost = Math.max(0, STG.startKg - currentKg);
+  const pct = Math.min(100, Math.round((lost / STG.kg) * 100));
+
+  // days remaining
+  const start = new Date(STG.startDate + 'T12:00:00');
+  const now = new Date();
+  const elapsed = Math.round((now - start) / 86400000);
+  const remaining = Math.max(0, STG.days - elapsed);
+
+  const tone = TONE === 'warrior';
+  document.getElementById('stg-desc').textContent =
+    `Perdre ${STG.kg} kg en ${STG.days} jours`;
+  document.getElementById('stg-progress-fill').style.width = pct + '%';
+  document.getElementById('stg-pct').textContent = pct + '%';
+
+  if (remaining === 0 && pct < 100) {
+    document.getElementById('stg-meta').textContent = tone
+      ? `Objectif expiré — ${lost.toFixed(1)} kg / ${STG.kg} kg. Redefinis ta cible.`
+      : `Période terminée — ${lost.toFixed(1)} kg / ${STG.kg} kg. Fixe un nouvel objectif.`;
+  } else if (pct >= 100) {
+    document.getElementById('stg-meta').textContent = tone ? '✓ Objectif atteint ⚔️' : '✓ Objectif atteint ! 🌟';
+  } else {
+    document.getElementById('stg-meta').textContent =
+      `${lost.toFixed(1)} kg perdus · ${remaining}j restants`;
+  }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'stats') {
+    requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
+    updateStats();
+  }
+  if (name === 'rang') updateRang();
+  if (name === 'coach') { updateCoach(); updateTabLabels(); }
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+function openResetModal() { openModal('modal-reset'); }
+function confirmReset() {
+  save(STORAGE_PROFILE, null);
+  save(STORAGE_WEIGHTS, null);
+  save(STORAGE_XP, null);
+  save(STORAGE_STG, null);
+  closeModal('modal-reset');
+  setTimeout(() => location.reload(), 300);
+}
+function openEditProfile() {
+  save(STORAGE_PROFILE, null);
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('onboarding').style.display = 'block';
+  document.getElementById('ob-start').value = PROF.start;
+  document.getElementById('ob-goal').value = PROF.goal;
+  document.getElementById('ob-date').value = PROF.date || '';
+  document.getElementById('ob-occasion').value = PROF.occasion || '';
+  obStep = 0;
+  document.querySelectorAll('.ob-step').forEach((s,i) => s.classList.toggle('active', i === 0));
+  document.querySelectorAll('.ob-dot').forEach((d,i) => d.classList.toggle('active', i === 0));
+}
+function openToneModal() {
+  document.getElementById('modal-tone-warrior').classList.toggle('selected', TONE === 'warrior');
+  document.getElementById('modal-tone-coach').classList.toggle('selected', TONE === 'coach');
+  openModal('modal-tone');
+}
+function setTone(tone) {
+  TONE = tone;
+  PROF.tone = tone;
+  save(STORAGE_PROFILE, PROF);
+  document.getElementById('modal-tone-warrior').classList.toggle('selected', tone === 'warrior');
+  document.getElementById('modal-tone-coach').classList.toggle('selected', tone === 'coach');
+  updateAll();
+  closeModal('modal-tone');
+}
+
+// ============================================================
+// LEVEL UP
+// ============================================================
+function showLevelUp(rank) {
+  document.getElementById('lu-emoji').textContent = rankIcon(rank);
+  document.getElementById('lu-rank').textContent = rankName(rank).toUpperCase();
+  document.getElementById('lu-msg').textContent = TONE === 'warrior'
+    ? 'Tu montes en grade. Le combat continue. Prouve que tu le mérites.'
+    : 'Belle progression ! Tu as mérité cette promotion. Continue sur cette lancée.';
+  const label2 = document.querySelector('.levelup-label');
+  if (label2) label2.textContent = TONE === 'warrior' ? 'PROMOTION AU RANG' : 'NOUVEAU NIVEAU';
+  document.getElementById('levelup-overlay').classList.add('show');
+  confetti();
+}
+function closeLevelUp() {
+  document.getElementById('levelup-overlay').classList.remove('show');
+}
+function showXPLevelUp(level) {
+  // reuse levelup overlay with XP flavor
+  document.getElementById('lu-emoji').textContent = '⭐';
+  document.getElementById('lu-rank').textContent = 'NIVEAU ' + level;
+  document.getElementById('lu-msg').textContent = TONE === 'warrior'
+    ? 'Tu montes de niveau. La discipline paie. Reste dans la zone.'
+    : 'Nouveau niveau atteint ! Chaque jour compte. Continue comme ça.';
+  const label = document.querySelector('.levelup-label');
+  if (label) label.textContent = TONE === 'warrior' ? 'MONTÉE DE NIVEAU XP' : 'NOUVEAU NIVEAU';
+  document.getElementById('levelup-overlay').classList.add('show');
+  confetti();
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function confetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const colors = ['#c9a84c','#e8c97e','#f5e6b8','#ffffff','#4caf50'];
+  const pieces = Array.from({ length: 60 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 100,
+    r: 2 + Math.random() * 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    speed: 2 + Math.random() * 4,
+    drift: (Math.random() - 0.5) * 2,
+    rot: Math.random() * Math.PI * 2,
+    rotSpeed: (Math.random() - 0.5) * 0.2,
+  }));
+  let frame = 0;
+  const MAX = 120;
+  (function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame / MAX);
+      ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 2);
+      ctx.restore();
+      p.y += p.speed;
+      p.x += p.drift;
+      p.rot += p.rotSpeed;
+    });
+    if (++frame < MAX + 20) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  })();
+}
+
+// ============================================================
+// TEST MODE
+// ============================================================
+function openTestMode() {
+  const base = PROF.start;
+  const goal = PROF.goal;
+  const pace = (base - goal) / 90;
+  const testWeights = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const str = d.toISOString().slice(0, 10);
+    const trend = base - (29 - i) * pace;
+    const noise = (Math.random() - 0.55) * 0.7;
+    const dow = d.getDay();
+    const weekendBias = (dow === 0 || dow === 6) ? 0.25 : dow === 1 ? 0.35 : 0;
+    const kg = Math.max(goal + 0.3, Math.round((trend + noise + weekendBias) * 10) / 10);
+    testWeights.push({ date: str, kg });
+  }
+  WEIGHTS = testWeights;
+  save(STORAGE_WEIGHTS, WEIGHTS);
+  updateAll();
+  requestAnimationFrame(() => requestAnimationFrame(() => renderChart()));
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+(function boot() {
+  const prof = load(STORAGE_PROFILE, null);
+  const weights = load(STORAGE_WEIGHTS, null);
+  if (prof && weights) {
+    PROF = prof;
+    WEIGHTS = weights;
+    TONE = prof.tone || 'warrior';
+    XP = load(STORAGE_XP, 0);
+    STG = load(STORAGE_STG, null);
+    document.getElementById('onboarding').style.display = 'none';
+    document.getElementById('main-app').style.display = 'flex';
+    initApp();
+  }
+})();
+</script>
+</body>
+</html>
